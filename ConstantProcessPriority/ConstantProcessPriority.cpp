@@ -6,8 +6,7 @@
 #include "PriorityClassControl.h"
 #include <shellapi.h>
 #include <windowsx.h>
-#include <fstream>
-#include "json.hpp"
+#include "SettingsManager.h"
 
 #define MAX_LOADSTRING 100
 #define WM_UPDATESTATUS WM_USER
@@ -22,9 +21,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 WCHAR szNextStatusMessage[250];					// Status message to set after WM_UPDATESTATUS
 bool bMinimizedToTray = false;
 
-const char JsonFile_Name[] = "ConstantProcessPrioritySettings.json";
-const char JsonFile_NamesField[] = "processList";
-const char JsonFile_PriorityField[] = "priority";
+SettingsManager settingsFile;
 
 // Forward declarations of functions included in this code module:
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -113,35 +110,30 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	int argc;
 	wchar_t **argv = CommandLineToArgvW(lpCmdLine, &argc);
 
-	// if there are command-line arguments, load them. They're priority
-	if (argc == 3 && lstrcmpW(argv[0], L"-set") == 0)
+	// try loading settings from settings file
+	bool bLoadedPrioritySettings, bLoadedMinimizedState;
+	settingsFile.LoadSettings(bLoadedPrioritySettings, bLoadedMinimizedState);
+
+	// if there are command-line arguments, use them. They're priority
+	if (argc >= 3 && lstrcmpW(argv[0], L"-set") == 0)
 	{
 		ProcessesControl.Setup(argv[1], argv[2]);
 		UpdateDialog(hWnd);
 		SetStatusMessage(hWnd, L"Settings set from command line");
 		SaveSettingsToFile();
 	}
-	else // try to load settings from settings file
+	else if (bLoadedPrioritySettings)
 	{
-		std::ifstream jsonFile(JsonFile_Name);
-		if (jsonFile.is_open())
-		{
-			nlohmann::json json;
-			jsonFile >> json;
+		ProcessesControl.Setup(settingsFile.Names.c_str(), settingsFile.Priority);
 
-			// check for required fields
-			if (json.find(JsonFile_NamesField) != json.end()
-				&& json.find(JsonFile_PriorityField) != json.end())
-			{
-				std::string names(json[JsonFile_NamesField].get<std::string>());
-				ProcessesControl.Setup(
-					std::wstring(names.begin(), names.end()).c_str(),
-					json[JsonFile_PriorityField].get<int>());
+		UpdateDialog(hWnd);
+		SetStatusMessage(hWnd, L"Settings loaded from file");
+	}
 
-				UpdateDialog(hWnd);
-				SetStatusMessage(hWnd, L"Settings loaded from file");
-			}
-		}
+	// loaded minimized settings?
+	if (bLoadedMinimizedState && settingsFile.bStartMinimized)
+	{
+		MinimizeToTray(hWnd);
 	}
 
 
@@ -154,7 +146,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		// reduce processor usage when on tray
 		if (bMinimizedToTray)
-			std::this_thread::sleep_for(std::chrono::milliseconds(300));
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 
 	return (int)msg.wParam;
@@ -224,6 +216,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case SC_MINIMIZE:
 			MinimizeToTray(hWnd);
+			settingsFile.bStartMinimized = true;
+			settingsFile.SaveSettings();
 			return 0;
 			break;
 		}
@@ -277,19 +271,8 @@ void UpdateSettings(HWND hWnd)
 // Store current ProcessesControl settings on a settings file
 void SaveSettingsToFile()
 {
-	std::wstring Names; int Priority;
-	ProcessesControl.GetSettings(Names, Priority);
-
-	nlohmann::json json;
-	json[JsonFile_NamesField] = std::string(Names.begin(), Names.end());
-	json[JsonFile_PriorityField] = Priority;
-
-	std::ofstream jsonFile(JsonFile_Name);
-	if (jsonFile.is_open())
-	{
-		jsonFile << std::setw(4) << json << std::endl;
-		jsonFile.close();
-	}
+	ProcessesControl.GetSettings(settingsFile.Names, settingsFile.Priority);
+	settingsFile.SaveSettings();
 }
 
 //-- TRAY ICON --------------------------------------------------------------//
@@ -325,6 +308,9 @@ void RestoreFromTray(HWND hWnd)
 	RemoveTrayIcon(hWnd);
 	ShowWindow(hWnd, SW_RESTORE);
 	bMinimizedToTray = false;
+
+	settingsFile.bStartMinimized = false;
+	settingsFile.SaveSettings();
 }
 
 // Destroy the tray area icon

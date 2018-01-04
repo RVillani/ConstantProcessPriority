@@ -1,4 +1,5 @@
 {
     "priority": 3,
-    "processList": "ShaderCompileWorker.exe"
+    "processList": "ShaderCompileWorker.exe",
+    "startMinimized": false
 }
