@@ -18,7 +18,9 @@ Everytime you configure it, be it through command-line or by manually setting it
 
 Priority level is set by a number. Possible values are:
 
- - 0 = Below Normal priority
- - 1 = Normal priority
- - 2 = Above Normal priority
- - 3 = High priority
+ - 0 = Low priority
+ - 1 = Below Normal priority
+ - 2 = Normal priority
+ - 3 = Above Normal priority
+ - 4 = High priority
+ - 5 = Realtime priority (only works if program is started as Administrator)
