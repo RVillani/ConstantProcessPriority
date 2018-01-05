@@ -40,11 +40,13 @@ void SetStatusMessage(HWND hWnd, const wchar_t *Message, UINT clearTimer = 6000)
 void AddStatusMessage(const wchar_t *Message);
 
 // Priority class alternatives
-wchar_t PriorityNames[4][16] = {
+wchar_t PriorityNames[][16] = {
+	TEXT("Low"),
 	TEXT("Below Normal"),
 	TEXT("Normal"),
 	TEXT("Above Normal"),
-	TEXT("High")
+	TEXT("High"),
+	TEXT("Realtime")
 };
 
 PriorityClassControl ProcessesControl;
@@ -238,7 +240,7 @@ void SetupDialog(HWND hWnd)
 	memset(&A, 0, sizeof(A));
 	HWND hComboBox = GetDlgItem(hWnd, IDC_COMBO_PRIORITY);
 
-	for (UINT i = 0; i < 4; ++i)
+	for (UINT i = 0; i < sizeof(PriorityNames) / sizeof(A); ++i)
 	{
 		wcscpy_s(A, sizeof(A) / sizeof(TCHAR), (TCHAR*)PriorityNames[i]);
 		SendMessage(hComboBox, (UINT)CB_INSERTSTRING, (WPARAM)i, (LPARAM)A);
@@ -299,6 +301,8 @@ void MinimizeToTray(HWND hWnd)
 	ShowWindow(hWnd, SW_HIDE);
 	DestroyIcon(niData.hIcon);
 
+	SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_BEGIN);
+
 	bMinimizedToTray = true;
 }
 
@@ -308,6 +312,8 @@ void RestoreFromTray(HWND hWnd)
 	RemoveTrayIcon(hWnd);
 	ShowWindow(hWnd, SW_RESTORE);
 	bMinimizedToTray = false;
+
+	SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_END);
 
 	settingsFile.bStartMinimized = false;
 	settingsFile.SaveSettings();

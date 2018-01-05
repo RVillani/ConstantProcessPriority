@@ -21,7 +21,7 @@ void PriorityClassControl::Setup(const wchar_t *Names, const wchar_t *Priority)
 {
 	// parse priority
 	unsigned long priority = wcstol(Priority, nullptr, 10);
-	priority = min(max(priority, 0), 3);
+	priority = min(max(priority, 0), 5);
 
 	Setup(Names, priority);
 }
@@ -32,10 +32,12 @@ void PriorityClassControl::Setup(const wchar_t *Names, int Priority)
 
 	switch (Priority)
 	{
-	case 0: PriorityClass = BELOW_NORMAL_PRIORITY_CLASS; break;
-	case 1: PriorityClass = NORMAL_PRIORITY_CLASS; break;
-	case 2: PriorityClass = ABOVE_NORMAL_PRIORITY_CLASS; break;
-	case 3: PriorityClass = HIGH_PRIORITY_CLASS; break;
+	case 0: PriorityClass = IDLE_PRIORITY_CLASS; break;
+	case 1: PriorityClass = BELOW_NORMAL_PRIORITY_CLASS; break;
+	case 2: PriorityClass = NORMAL_PRIORITY_CLASS; break;
+	case 3: PriorityClass = ABOVE_NORMAL_PRIORITY_CLASS; break;
+	case 4: PriorityClass = HIGH_PRIORITY_CLASS; break;
+	case 5: PriorityClass = REALTIME_PRIORITY_CLASS; break;
 	}
 
 	// parse names
