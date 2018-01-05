@@ -143,9 +143,11 @@ void PriorityClassControl::GetSettings(wstring &Names, int &Priority)
 
 	switch (PriorityClass)
 	{
-	case BELOW_NORMAL_PRIORITY_CLASS:	Priority = 0; break;
-	case NORMAL_PRIORITY_CLASS:			Priority = 1; break;
-	case ABOVE_NORMAL_PRIORITY_CLASS:	Priority = 2; break;
-	case HIGH_PRIORITY_CLASS:			Priority = 3; break;
+	case IDLE_PRIORITY_CLASS:			Priority = 0; break;
+	case BELOW_NORMAL_PRIORITY_CLASS:	Priority = 1; break;
+	case NORMAL_PRIORITY_CLASS:			Priority = 2; break;
+	case ABOVE_NORMAL_PRIORITY_CLASS:	Priority = 3; break;
+	case HIGH_PRIORITY_CLASS:			Priority = 4; break;
+	case REALTIME_PRIORITY_CLASS:		Priority = 5; break;
 	}
 }
